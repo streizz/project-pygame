@@ -12,9 +12,13 @@ skin_changing = False
 
 ship_upgrade1 = False
 
+levellisting = False
+
 charinfo = {}
 
 skins = ['skin1.png', 'skin2.png', 'skin3.png']
+
+levelmaps = ['media/lvl1bg.png', 'media/lvl2bg.png', 'media/lvl3bg.png']
 
 counter = 0
 
@@ -59,27 +63,49 @@ def charupgrade():
     ship_upgrade()
 
 
-def main_menu():
-    menu.clearing()
-    global ship_upgrade1
-
-    ship_upgrade1 = False
-
-    menu.add_option('Level list >', exit, font)
-    menu.add_option('Upgrade spaceship >', lambda: ship_upgrade(), font)
-    menu.add_option('Quit >', exit, font)
-
-
-main_menu()
-
-
 def skin_change():
 
     global skin_changing
 
-    skin_changing = 1
+    skin_changing = True
 
     ship_upgrade()
+
+
+def lvllist():
+
+    menu.clearing()
+
+    screen.blit(image.load(
+                        levelmaps[0]).convert_alpha(), (0, 0))
+
+    global levellisting
+
+    levellisting = True
+
+    menu.add_option('Level 1 >', lambda: start_lvl(levelmaps[0]), font)
+    menu.add_option('Level 2 >', lambda: start_lvl(levelmaps[1]), font)
+    menu.add_option('Level 3 >', lambda: start_lvl(levelmaps[2]), font)
+    menu.add_option('Back >', lambda: main_menu(), font)
+
+def main_menu():
+    menu.clearing()
+    global ship_upgrade1, levellisting, counter
+
+    ship_upgrade1 = False
+
+    levellisting = False
+
+    counter = 0
+
+    menu.add_option('Level list >', lambda: lvllist(), font)
+    menu.add_option('Upgrade spaceship >', lambda: ship_upgrade(), font)
+    menu.add_option('Quit >', exit, font)
+
+
+
+
+main_menu()
 
 
 creds = [fontcreds.render('Credits:', True, (255, 255, 255)), fontcreds.render(
@@ -96,14 +122,14 @@ while running:
         if event_.type == QUIT:
             running = False
         if event_.type == KEYDOWN:
-            if not skin_changing:
+            if not skin_changing and not levellisting:
                 if event_.key == K_UP:
                     menu.switch_point(-1)
                 elif event_.key == K_DOWN:
                     menu.switch_point(1)
                 elif event_.key == K_RIGHT:
                     menu.select()
-            if skin_changing:
+            elif skin_changing:
                 if event_.key == K_RIGHT:
                     counter += 1
                 if event_.key == K_LEFT:
@@ -113,10 +139,19 @@ while running:
                         charinfo['curskin'] = f'media/playable_{skins[counter % 3]}'
                         json.dump(charinfo, j)
                     skin_changing = False
+            elif levellisting:
+                if event_.key == K_UP:
+                    menu.switch_point(-1)
+                    counter -= 1
+                elif event_.key == K_DOWN:
+                    menu.switch_point(1)
+                    counter += 1
+                elif event_.key == K_RIGHT:
+                    menu.select()
 
     time_now = time.get_ticks()
 
-    if not ship_upgrade1:
+    if not ship_upgrade1 and not levellisting:
         if time_now > background_time + background_delay:
             background_time = time_now
             background_index += 1
@@ -131,11 +166,24 @@ while running:
             option_rect.topleft = (1100, 660 + i * 40)
             screen.blit(option, option_rect)
 
-    else:
+    elif ship_upgrade1:
         screen.blit(image.load(
             f"media/background_upgrading.png").convert_alpha(), (0, 0))
         screen.blit(image.load(
             f'media/{skins[(counter) % 3]}').convert_alpha(), (900, 450))
+
+    elif levellisting:
+        if counter > 2:
+            screen.blit(image.load(
+                levelmaps[2]).convert_alpha(), (0, 0))
+            counter = 3
+        elif counter <= 0:
+            screen.blit(image.load(
+                levelmaps[0]).convert_alpha(), (0, 0))
+            counter = 0
+        elif counter == 1 or counter == 2:
+            screen.blit(image.load(
+                levelmaps[counter]).convert_alpha(), (0, 0))
 
     if not skin_changing:
         menu.draw(screen, 100, 100, 75)
@@ -148,6 +196,3 @@ while running:
     display.flip()
 
 quit()
-
-
-#penis penis
